@@ -1,3 +1,3 @@
-export function formatPrice(v: number, currency = "MAD") {
-  return new Intl.NumberFormat("fr-MA", { style: "currency", currency }).format(v);
+export function formatPrice(v: number, currency = "TND", locale = "fr-TN") {
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(v);
 }

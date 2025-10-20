@@ -1,3 +1,4 @@
+import { formatPrice } from "@/src/utils/formatPrice";
 import { Image, StyleSheet, View } from "react-native";
 import { ThemedText } from "../../components/themed-text";
 
@@ -18,7 +19,7 @@ export function PropertyCard({ title, price, imageUrl, location }: Props) {
       )}
       <ThemedText type="defaultSemiBold">{title}</ThemedText>
       <ThemedText>{location}</ThemedText>
-      <ThemedText type="subtitle">{price} MAD</ThemedText>
+  <ThemedText type="subtitle">{typeof price === 'number' ? formatPrice(price) : price}</ThemedText>
     </View>
   );
 }

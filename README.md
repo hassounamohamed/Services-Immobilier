@@ -21,7 +21,7 @@ HomeRentalApp/
 │   │   └── map-screen.tsx
 │   ├── modal.tsx                   # Exemple de modal (Expo)
 │   ├── _layout.tsx                 # Layout global
-│   └── _layout.auth.tsx            # Layout spécifique pour auth
+│   └── auth/_layout.tsx            # Layout spécifique pour auth
 │
 ├── src/
 │   ├── components/                 # Composants réutilisables

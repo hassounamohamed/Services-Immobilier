@@ -1,98 +1,99 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { PropertyCard } from '@/src/components/PropertyCard';
+import { SearchBar } from '@/src/components/SearchBar';
+import { useAppTheme } from '@/src/context/ThemeContext';
+import { listProperties, type Property } from '@/src/services/propertyService';
 import { Link } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Etap 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { toggle, scheme } = useAppTheme();
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'rent' | 'sale'>('all');
+  const [data, setData] = useState<Property[]>([]);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  useEffect(() => {
+    listProperties().then(setData);
+  }, []);
+
+  const filtered = data.filter((p) =>
+    (filter === 'all' || p.type === filter) &&
+    (query.trim().length === 0 || p.title.toLowerCase().includes(query.toLowerCase()))
+  );
+
+  return (
+    <ThemedView style={styles.container}>
+      <View style={styles.hero}>
+        <View style={{ flex: 1 }}>
+          <ThemedText type="title">Trouvez votre prochain chez‑vous</ThemedText>
+          <ThemedText>Explorez des milliers d’annonces en location et vente.</ThemedText>
+        </View>
+        <ThemeToggle onPress={toggle} scheme={scheme} />
+      </View>
+      <SearchBar placeholder="Rechercher un bien, ex: appartement" onChange={setQuery} />
+
+      <View style={styles.filters}>
+        <FilterChip label="Tout" active={filter === 'all'} onPress={() => setFilter('all')} />
+        <FilterChip label="Location" active={filter === 'rent'} onPress={() => setFilter('rent')} />
+        <FilterChip label="Vente" active={filter === 'sale'} onPress={() => setFilter('sale')} />
+      </View>
+
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingVertical: 8, gap: 16 }}
+        renderItem={({ item }) => (
+          <Link href={{ pathname: '/property/details', params: { id: item.id } }} asChild>
+            <View>
+              <PropertyCard title={item.title} price={item.price} location={item.location} imageUrl={item.imageUrl} />
+            </View>
+          </Link>
+        )}
+        ListEmptyComponent={<ThemedText>Aucun résultat</ThemedText>}
+      />
+    </ThemedView>
+  );
+}
+
+function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <ThemedText
+      onPress={onPress}
+      style={{
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: active ? '#2563eb' : '#e5e7eb',
+        color: active ? '#2563eb' : undefined,
+      }}
+    >
+      {label}
+    </ThemedText>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  container: { flex: 1, padding: 16, gap: 12 },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  filters: { flexDirection: 'row', gap: 8, marginVertical: 8 },
 });
+
+function ThemeToggle({ onPress, scheme }: { onPress: () => void; scheme: 'light' | 'dark' }) {
+  return (
+    <ThemedText
+      onPress={onPress}
+      style={{
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+      }}
+    >
+      {scheme === 'light' ? '🌙 Sombre' : '☀️ Clair'}
+    </ThemedText>
+  );
+}
